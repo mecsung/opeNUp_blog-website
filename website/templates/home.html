@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block style %}
+<style type="text/css">
+	.btn-group button {
+		background: none;
+		border: none;
+		color: black;
+	}
+	.card {
+		border: none;
+	}
+	.card .username {
+		text-decoration: none;
+		color: #393939;
+		font-weight: 600;
+	}
+	.input-post {
+		width: 100%;
+		padding: 2%;
+		background: #FCFCFC;
+		border-radius: 1em;
+	}
+	.btn-post {
+		width: 100%;
+		border-radius: 2em;
+		background: #EEE;
+		border: none;
+		color: #9A9A9A;
+		height: 40px;
+	}
+	.btn-post:hover {
+		background: #DDD;
+	}
+	.card-header i:hover {
+		cursor: pointer;
+	}
+</style>
+{% endblock %}
+
+{% block content%}
+<div class="feed">
+	<div class="profile">
+		<div align="center">
+			
+		</div>
+	</div>
+
+	<div class="posts" id="posts">
+		
+		<div class="input-post">
+			<!-- Button trigger modal -->
+			<button type="button" class="btn-post" data-bs-toggle="modal" 
+				data-bs-target="#staticBackdrop"/>
+			  What's on your mind?
+			</button>
+
+			<!-- Modal -->
+			<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" 
+				data-bs-keyboard="false" tabindex="-1" 
+				aria-labelledby="staticBackdropLabel" aria-hidden="true">
+			  <div class="modal-dialog modal-dialog-centered">
+			    <div class="modal-content">
+			      <div class="modal-header">
+			        <h5 class="modal-title" id="staticBackdropLabel">Create a post</h5>
+			        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			      </div>
+			      <div class="modal-body">
+			        <form method="POST" action="/create-post">
+						<form method="POST">
+							<textarea name="text" id="text" class="form-control" 
+							placeholder="What's on your mind?" 
+							style="border: none;"></textarea>
+							<br />
+							<div align="center">
+								<button type="submit" class="btn btn-lg btn-primary"
+								style="width: 100%;">Post</button>
+							</div>
+						</form>
+						<br/>
+					</form>
+			      </div>
+			    </div>
+			  </div>
+			</div>	
+		</div>
+		<br/>
+
+	  {% for post in posts %}
+	  <div class="card border-dark">
+	    <div class="card-header d-flex justify-content-between align-items-center">
+	      <div>
+	    	<img align="center" style="width: 25px;
+	    	margin-right: 5px;" src="{{ url_for('static', filename='profile.png') }}">
+	       	<a class="username" href="/posts/{{post.user.username}}">{{post.user.username}}</a>
+	      </div>
+	       
+	      <div>
+	        <span id="likes-count-{{post.id}}">
+	        {{ post.likes|length }}</span>
+
+	        {% if user.id in post.likes|map(attribute="author")|list %}
+	          <i class="fas fa-thumbs-up" title="dislike" id="like-button-{{post.id}}" onclick="like({{post.id}})">
+	          </i>
+	        {% else %}
+	        <i class="far fa-thumbs-up" title="like" id="like-button-{{post.id}}" onclick="like({{post.id}})"></i>
+	        {% endif %}
+
+	        {% if user.id == post.author %}
+	        <div class="btn-group">
+	          <button type="button" class="btn btn-sm btn-secondary"
+	            data-bs-toggle="dropdown">
+	            	<i  title="options" class="fa-solid fa-ellipsis"></i>
+	            </button>
+	          <ul class="dropdown-menu">
+	            <li>
+	              <a href="/delete-post/{{post.id}}" class="dropdown-item">Delete</a>
+	            </li>
+	          </ul>
+	        </div>
+	        {% endif %}
+
+	      </div>
+	    </div>
+	    <div class="card-body">
+	      <div class="card-text">{{post.text}}</div>
+	      <br/>
+	      <div class="collapse" id="comments-{{post.id}}">
+	        <div class="card">
+	          <div class="card-body" id="comments-expanded-{{post.id}}">
+
+	            {% for comment in post.comments %}
+	            <div class="d-flex justify-content-between align-items-center">
+	              <div>
+	                <a class="username" href="/posts/{{comment.user.username}}">{{comment.user.username}}</a>: {{comment.text}}
+	              </div>
+	              <div>
+	                <small class="text-muted"> {{comment.date_created}}</small>
+
+	                {% if user.id == comment.author or user.id == post.author %}
+	                <div class="btn-group">
+	                  <button type="button" class="btn btn-sm btn-primary"
+	                    data-bs-toggle="dropdown">
+	                    	<i class="fa-solid fa-ellipsis"></i>
+	                    </button>
+	                  <ul class="dropdown-menu">
+	                    <li>
+	                      <a href="/delete-comment/{{comment.id}}" class="dropdown-item">Delete</a>
+	                    </li>
+	                  </ul>
+	                </div>
+	                {% endif %}
+
+	              </div>
+	            </div>
+	            {% endfor %}
+
+	          </div>
+	        </div>
+	      </div>
+
+	      <p class="card-text">
+	        {% if post.comments|length > 0 %}
+	        <a data-bs-toggle="collapse" href="#comments-{{post.id}}" role="button">
+	          <small>View {{post.comments|length}} Comments</small>
+	        </a>
+	        {% else %}
+	        <small class="text-muted">No Comments</small>
+	        {% endif %}
+	      </p>
+
+	      <form class="input-group mb-3" method="POST" action="/create-comment/{{post.id}}">
+	        <input type="text" id="text"name="text" class="form-control" placeholder="Comment"/>
+	        <button type="submit" class="btn btn-primary">Comment</button>
+	      </form>
+
+	    </div>
+	    <div class="card-footer text-muted">{{post.date_created}}</div>
+	  </div>
+	  <br/>
+	  {% endfor %}
+
+	</div>
+
+	<div class="sponsors">
+		
+	</div>
+</div>
+{% endblock %}
+
